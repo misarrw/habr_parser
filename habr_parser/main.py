@@ -4,27 +4,6 @@ import json
 
 habr = 'https://habr.com/ru/search/'
 
-def find_by_key(word):
-    global habr, page
-    if page > 1:
-        habr += f'page{page}&'
-    search_url = habr + f'?q={word}&target_type=posts&order=relevance'
-    response = requests.get(search_url)
-    soup = BeautifulSoup(response.text, 'lxml')
-    articles = soup.find_all('article', class_='tm-articles-list__item')
-    key_articles_dict = {}
-    key_articles_list = []
-    
-    for article in articles:
-        title_block = article.find('h2', class_='tm-title tm-title_h2')
-        if title_block and title_block.find('span'):
-            link_tag = title_block.find('a', class_='tm-title__link')
-            link = link = 'https://habr.com' + link_tag['href']
-            title = title_block.find('span').text
-            key_articles_dict[title] = link
-            key_articles_list.append(title)
-    habr = 'https://habr.com/ru/search/'
-    return key_articles_dict, key_articles_list
 
 class ParseTheArticle():
     def find_all_properties(self):
@@ -58,13 +37,11 @@ class Article(ParseTheArticle):
         return article
     
 
-'''def next_page():
-    global page, habr, word
-    page += 1
-    habr += f'?page{page}&'
-    result = find_by_key(word)
-    for number, article in enumerate(result):
-        print(f'{number + 1}. {article}')'''
+class Functions(Article):
+    def write_into_json(self):
+        article = self.convert_to_dict()
+        with open('result.json', 'w', encoding='utf-8') as json_file:
+                json.dump({'data' : article}, json_file, ensure_ascii=False, indent=4)
 
 
 def show_page():
@@ -82,23 +59,41 @@ def show_page():
     elif next_or_number.isdigit() == True and int(next_or_number) in range(21):
         element = key_articles_list[int(next_or_number) - 1]
         url = key_articles_dict[element]
-        article_url = Article(url)
-        article = article_url.convert_to_dict()
-        with open('result.json', 'w', encoding='utf-8') as json_file:
-            json.dump({'data' : article}, json_file, ensure_ascii=False, indent=4)
+        article_url = Functions(url)
+        article_url.write_into_json()
+
+def find_by_key(word):
+    global habr, page
+    if page > 1:
+        habr += f'page{page}&'
+    search_url = habr + f'?q={word}&target_type=posts&order=relevance'
+    response = requests.get(search_url)
+    soup = BeautifulSoup(response.text, 'lxml')
+    articles = soup.find_all('article', class_='tm-articles-list__item')
+    key_articles_dict = {}
+    key_articles_list = []
+    
+    for article in articles:
+        title_block = article.find('h2', class_='tm-title tm-title_h2')
+        if title_block and title_block.find('span'):
+            link_tag = title_block.find('a', class_='tm-title__link')
+            link = link = 'https://habr.com' + link_tag['href']
+            title = title_block.find('span').text
+            key_articles_dict[title] = link
+            key_articles_list.append(title)
+    habr = 'https://habr.com/ru/search/'
+    return key_articles_dict, key_articles_list
 
 
 page = 1
 print('Write the word "key" if you wanna search articles by the key word\nWrite the word "link" if you have a particular link:')
 paste = input()
-if paste == 'link':
+if paste.lower() == 'link':
     print('Paste the link:')
     article_url = input()
-    article_url = Article(article_url)
-    article = article_url.convert_to_dict()
-    with open('result.json', 'w', encoding='utf-8') as json_file:
-            json.dump({'data' : article}, json_file, ensure_ascii=False, indent=4)
-elif paste == 'key':
+    article_url = Functions(article_url)
+    article_url.write_into_json()
+elif paste.lower() == 'key':
     print('Write a key word:')
     word = input()
     show_page()
