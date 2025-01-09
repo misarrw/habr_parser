@@ -7,27 +7,34 @@ habr = 'https://habr.com/ru/search/'
 
 class ParseTheArticle():
     def find_all_properties(self):
-        response = requests.get(self.url).text
-        soup = BeautifulSoup(response, 'lxml')
+        try:
+            response = requests.get(self.url).text
+            soup = BeautifulSoup(response, 'lxml')
 
-        title_block = soup.find('h1')
-        title_element = title_block.find('span').text
-        
-        author_block = soup.find('span', class_ = 'tm-user-info__user tm-user-info__user_appearance-default')
-        author_element = author_block.find('a', class_ = 'tm-user-info__username').text
+            title_block = soup.find('h1')
+            title_element = title_block.find('span').text
+            
+            author_block = soup.find('span', class_ = 'tm-user-info__user tm-user-info__user_appearance-default')
+            author_element = author_block.find('a', class_ = 'tm-user-info__username').text
 
-        contents_block = soup.find('div', class_ = 'tm-article-body').text
+            contents_block = soup.find('div', class_ = 'tm-article-body').text
 
-        return title_element, author_element, contents_block
+            return title_element, author_element, contents_block
+        except AttributeError:
+            pass
+
 
 
 class Article(ParseTheArticle):
     def __init__(self, url):
-        self.url = url
-        article = self.find_all_properties()
-        self.title = article[0]
-        self.author = article[1]
-        self.contents = article[2]
+        try:
+            self.url = url
+            article = self.find_all_properties()
+            self.title = article[0]
+            self.author = article[1]
+            self.contents = article[2]
+        except TypeError:
+            pass
 
     def convert_to_dict(self):
         article = {"title" : self.title,
@@ -39,9 +46,19 @@ class Article(ParseTheArticle):
 
 class Functions(Article):
     def write_into_json(self):
-        article = self.convert_to_dict()
-        with open('result.json', 'w', encoding='utf-8') as json_file:
-                json.dump({'data' : article}, json_file, ensure_ascii=False, indent=4)
+        try:
+            article = self.convert_to_dict()
+            with open('result.json', 'w', encoding='utf-8') as json_file:
+                    json.dump({'data' : article}, json_file, ensure_ascii=False, indent=4)
+        except AttributeError:
+            print('It seems like the program cannot access some necessary info.\n' + 
+                  "Probable reasons of the error's appearing:\n" + 
+                  '1. Your link is not a Habr link.\n' + 
+                  '2. Your link is not an article link.\n' +
+                  '3. Wrong spelling. Check your link\n' +
+                  'Try again. Good luck :)')
+            
+        
 
 
 def show_page():
@@ -61,6 +78,14 @@ def show_page():
         url = key_articles_dict[element]
         article_url = Functions(url)
         article_url.write_into_json()
+    elif next_or_number.isdigit() == True and int(next_or_number) not in range(21):
+        print('This number of the article does not exist. Try again')
+        next_or_number = input()
+    else:
+        print('This option is not available.')
+        print('If you wanna see other articles, write "next"\nOr write the number of the article you wanna see:')
+        next_or_number = input()
+
 
 def find_by_key(word):
     global habr, page
@@ -77,7 +102,7 @@ def find_by_key(word):
         title_block = article.find('h2', class_='tm-title tm-title_h2')
         if title_block and title_block.find('span'):
             link_tag = title_block.find('a', class_='tm-title__link')
-            link = link = 'https://habr.com' + link_tag['href']
+            link = 'https://habr.com' + link_tag['href']
             title = title_block.find('span').text
             key_articles_dict[title] = link
             key_articles_list.append(title)
