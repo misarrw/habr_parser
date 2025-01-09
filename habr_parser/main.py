@@ -1,4 +1,5 @@
 import requests
+from requests.exceptions import MissingSchema
 from bs4 import BeautifulSoup
 import json
 
@@ -22,6 +23,10 @@ class ParseTheArticle():
             return title_element, author_element, contents_block
         except AttributeError:
             pass
+        except MissingSchema:
+            print('This is not a link. Try again')
+            link = input()
+            link = Functions(link)
 
 
 
@@ -37,11 +42,14 @@ class Article(ParseTheArticle):
             pass
 
     def convert_to_dict(self):
-        article = {"title" : self.title,
-                   "url" : self.url,
-                   "author" : self.author,
-                   "contents" : self.contents}
-        return article
+        try:
+            article = {"title" : self.title,
+                    "url" : self.url,
+                    "author" : self.author,
+                    "contents" : self.contents}
+            return article
+        except TypeError:
+            pass
     
 
 class Functions(Article):
@@ -57,6 +65,7 @@ class Functions(Article):
                   '2. Your link is not an article link.\n' +
                   '3. Wrong spelling. Check your link\n' +
                   'Try again. Good luck :)')
+            
             
         
 
